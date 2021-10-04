@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "git-backend",
   "version": "1.0.0",
   "description": "",
@@ -9,5 +10,11 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^2.0.13"
+  },
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
