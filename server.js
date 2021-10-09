@@ -2,47 +2,56 @@ import Express from 'express'
 
 const app = Express();
 
-app.use(Express.urlencoded({extended: false}));
-app.use(Express.json());
+app.use(Express.json())
+
+const database = {
+	users: [
+			{
+				id: '123',
+				name: 'John',
+				email: 'gohn@gmail.com',
+				password: 'cookies',
+				entries: 0,
+				joined:	new Date()	
+			},
+			{
+				id: '12345',
+				name: 'Sally',
+				email: 'sally@gmail.com',
+				password: 'cookies1',
+				entries: 0,
+				joined:	new Date()	
+			}
+	]}
+
 
 app.get('/', (req, res) => {
-	res.send(`It's working!`)
+	res.json(database.users)
 })
 
-app.get('/profileeeee', (req, res) => {
-	res.send(`Profile`)
-})
-
-app.post('/profile', (req, res) => {
-	console.log(req.body)
-	const user = {
-		size: 'massive',
-		sara: `love's to feel size inside`,
-		hobby: 'sucking'
+app.post('/signin', (req, res) => {
+	if (req.body.email === database.users[0].email &&
+		req.body.password === database.users[0].password) {
+		res.json('Done!')
+	} else {
+		res.status(400).json('Error ocured')
 	}
-	res.send(user);
 })
 
-app.listen(3000);
+app.post('/register', (req, res) => {
+	const { name, email, password } = req.body;
+	database.users.push({
+		id: '1235',
+		name: name,
+		email: email,
+		password: password,
+		entries: 0,
+		joined:	new Date()	
+	})
+	res.json(database.users[database.users.length -1])
+})
 
 
-
-
-
-// import http from 'http'
-
-// const server = http.createServer((req, res) => {
-// 	console.log('headers', req.headers)
-// 	console.log('method', req.method)
-// 	console.log('url', req.url)
-// 	const object = {
-// 		Jonny: 'scating',
-// 		Sandy: 'riding Jonny'
-// 	}
-
-
-// 	res.setHeader('Content-Type', 'application/json');
-// 	res.end(JSON.stringify(object));
-// })
-
-// server.listen(3000)
+app.listen(3000, () => {
+	console.log('App is running')
+})
