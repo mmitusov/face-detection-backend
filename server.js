@@ -51,6 +51,34 @@ app.post('/register', (req, res) => {
 	res.json(database.users[database.users.length -1])
 })
 
+app.get('/profile/:id', (req, res) => {
+	const { id } = req.params; // takes info from the поисковой строки
+	let found = false;
+	database.users.forEach(user => {
+		if (user.id === id) {//one id from database and one from req
+			found = true;
+			return res.json(user)
+		} 
+	})
+	if (!found) {
+		res.status(404).json(`Can't be found`)
+	}
+}) 
+
+app.put('/image', (req, res) => {
+	const { id } = req.body; // takes info from the json's body
+	let found = false;
+	database.users.forEach(user => {
+		if (user.id === id) {//one id from database and one from req
+			found = true;
+			user.entries ++
+			return res.json(user.entries)
+		} 
+	})
+	if (!found) {
+		res.status(404).json(`Can't be found`)
+	}
+})
 
 app.listen(3000, () => {
 	console.log('App is running')
