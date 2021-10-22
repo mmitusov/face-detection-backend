@@ -1,28 +1,24 @@
 import Express from 'express'
+import bcrypt from 'bcrypt-nodejs'
+import cors from 'cors'
+import knex from 'knex'
+
+const db = knex({
+  client: 'pg',
+  connection: {
+	host : '127.0.0.1',
+	user : 'postgres',
+	password : 'test',
+	database : 'face_recognition'
+  },
+});
+
+db.select('*').from('users').then(console.log);
 
 const app = Express();
 
 app.use(Express.json())
-
-const database = {
-	users: [
-			{
-				id: '123',
-				name: 'John',
-				email: 'gohn@gmail.com',
-				password: 'cookies',
-				entries: 0,
-				joined:	new Date()	
-			},
-			{
-				id: '12345',
-				name: 'Sally',
-				email: 'sally@gmail.com',
-				password: 'cookies1',
-				entries: 0,
-				joined:	new Date()	
-			}
-	]}
+app.use(cors())
 
 
 app.get('/', (req, res) => {
@@ -30,25 +26,49 @@ app.get('/', (req, res) => {
 })
 
 app.post('/signin', (req, res) => {
-	if (req.body.email === database.users[0].email &&
-		req.body.password === database.users[0].password) {
-		res.json('Done!')
-	} else {
-		res.status(400).json('Error ocured')
-	}
+	db.select('email', 'hash').from('login')
+		.where('email', '=', req.body.email)
+		.then(data => {
+			const isValid = bcrypt.compareSync(req.body.password, data[0].hash);			
+			if (isValid) {
+				db.select('*').from('users')
+				.where('email', '=', req.body.email)
+				.then(user => {
+					res.json(user[0])
+				})
+				.catch(err => res.status(400).json('Err'))
+			} else {
+				res.status('400').json('wrong credentials')
+			}			
+		})
+		.catch(err => res.status(400).json('Err'))
 })
 
 app.post('/register', (req, res) => {
 	const { name, email, password } = req.body;
-	database.users.push({
-		id: '1235',
-		name: name,
-		email: email,
-		password: password,
-		entries: 0,
-		joined:	new Date()	
+	const hash = bcrypt.hashSync(password);
+	db.transaction(trx => {
+		trx.insert({
+			hash: hash,
+			email: email
+		})
+		.into('login')
+		.returning('email')
+		.then(loginEmail => {
+					trx('users')	
+					.insert({
+						email: loginEmail[0],
+						name: name,
+						joined: new Date()
+					}).returning('*')
+					.then(user => {
+						res.json(user[0])
+					})
+		})
+		.then(trx.commit)
+		.catch(trx.rollback)
 	})
-	res.json(database.users[database.users.length -1])
+	.catch(err => res.status(400).json('Err ocured'))
 })
 
 app.get('/profile/:id', (req, res) => {
@@ -80,6 +100,20 @@ app.put('/image', (req, res) => {
 	}
 })
 
-app.listen(3000, () => {
+
+// bcrypt.hash("bacon", null, null, function(err, hash) {
+//     // Store hash in your password DB.
+// });
+
+// // Load hash from your password DB.
+// bcrypt.compare("bacon", hash, function(err, res) {
+//     // res == true
+// });
+// bcrypt.compare("veggies", hash, function(err, res) {
+//     // res = false
+// });
+
+
+app.listen(3001, () => {
 	console.log('App is running')
 })
