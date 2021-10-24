@@ -6,14 +6,12 @@ import knex from 'knex'
 const db = knex({
   client: 'pg',
   connection: {
-	host : '127.0.0.1',
-	user : 'postgres',
-	password : 'test',
-	database : 'face_recognition'
+		host : '127.0.0.1',
+		user : 'postgres',
+		password : 'test',
+		database : 'face_recognition'
   },
 });
-
-db.select('*').from('users').then(console.log);
 
 const app = Express();
 
@@ -73,45 +71,28 @@ app.post('/register', (req, res) => {
 
 app.get('/profile/:id', (req, res) => {
 	const { id } = req.params; // takes info from the поисковой строки
-	let found = false;
-	database.users.forEach(user => {
-		if (user.id === id) {//one id from database and one from req
-			found = true;
-			return res.json(user)
-		} 
-	})
-	if (!found) {
-		res.status(404).json(`Can't be found`)
-	}
-}) 
-
-app.put('/image', (req, res) => {
-	const { id } = req.body; // takes info from the json's body
-	let found = false;
-	database.users.forEach(user => {
-		if (user.id === id) {//one id from database and one from req
-			found = true;
-			user.entries ++
-			return res.json(user.entries)
-		} 
-	})
-	if (!found) {
-		res.status(404).json(`Can't be found`)
-	}
+  db.select('*').from('users').where({id})
+    .then(user => {
+      if (user.length) { //one id from database and one from req
+        res.json(user[0])
+      } else {
+        res.status(400).json('Not found')
+      }
+    })
+    .catch(err => res.status(400).json('error getting user'))
 })
 
 
-// bcrypt.hash("bacon", null, null, function(err, hash) {
-//     // Store hash in your password DB.
-// });
-
-// // Load hash from your password DB.
-// bcrypt.compare("bacon", hash, function(err, res) {
-//     // res == true
-// });
-// bcrypt.compare("veggies", hash, function(err, res) {
-//     // res = false
-// });
+app.put('/image', (req, res) => {
+	const { id } = req.body;
+  db('users').where('id', '=', id)
+  .increment('entries', 1)
+  .returning('entries')
+  .then(entries => {
+    res.json(entries[0]);
+  })
+  .catch(err => res.status(400).json('unable to get entries'))
+})
 
 
 app.listen(3001, () => {
