@@ -1,3 +1,16 @@
+import Clarifai from 'clarifai';
+
+const app = new Clarifai.App({
+  apiKey: 'e1e29699a6504336ae0ffa788524d16a'
+});
+
+const handleApiCall = (req, res) => {
+  app.models
+    .predict(Clarifai.FACE_DETECT_MODEL, req.body.input)
+    .then(data => res.json(data))
+    .catch(err => res.status(400).json('Clarifai is not responding'))
+}
+
 const image = (req, res, db) => {
 	const { id } = req.body;
   db('users').where('id', '=', id)
@@ -9,4 +22,4 @@ const image = (req, res, db) => {
   .catch(err => res.status(400).json('unable to get entries'))
 }
 
-export default image;
+export {image, handleApiCall};
