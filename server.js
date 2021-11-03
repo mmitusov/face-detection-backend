@@ -11,11 +11,9 @@ import {image, handleApiCall} from './controllers/image.js' //<--- Clarifai is m
 const db = knex({
   client: 'pg',
   connection: {
-		host : '127.0.0.1',
-		user : 'postgres',
-		password : 'test',
-		database : 'face_recognition'
-  },
+		host : process.env.DATABASE_URL,
+		ssl: true
+  }
 });
 const app = Express();
 app.use(Express.json())
