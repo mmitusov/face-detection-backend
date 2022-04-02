@@ -1,34 +1,38 @@
-import Express from 'express'
+import express from 'express'
+import bodyParser from 'body-parser' // latest version of exressJS now comes with Body-Parser!
 import bcrypt from 'bcrypt-nodejs'
 import cors from 'cors'
 import knex from 'knex'
-// const register = require('./controllers/register.js')
-import handleRegister from './controllers/register.js'
-import Signin from './controllers/signin.js'
-import profileId from './controllers/profile_id.js'
-import {image, handleApiCall} from './controllers/image.js' //<--- Clarifai is moved to the backend from the frontend into image.js file
+
+const handleSignin = require('./controllers/signin');
+const register = require('./controllers/register');
+const profile = require('./controllers/profile');
+const image = require('./controllers/image'); //<--- Clarifai is moved to the backend from the frontend into image.js file
+//We don't need "import {image, handleApiCall} from './controllers/image.js'", since via "const image = require('./controllers/image');" we can use "image.handleApiCall(req, res)"
 
 const db = knex({
+  // connect to your own database here:
   client: 'pg',
   connection: {
-		connectionString: process.env.DATABASE_URL,
-	  ssl: {
-	    rejectUnauthorized: false
-	  }
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false
+    }
   }
 });
-const app = Express();
-app.use(Express.json())
+
+const app = express();
+
 app.use(cors())
+app.use(express.json()); // latest version of exressJS now comes with Body-Parser!
 
-app.get('/', (req, res) => {res.json('Homepage is working!')})
-app.post('/register', (req, res) => {handleRegister(req, res, bcrypt, db)});    //!!!<--- Using dependency injection and injecting whatever dependensies this function needs (we can see them all together). So so don't need to import "bcrypt & db" on signin.js page
-app.post('/signin', Signin(bcrypt, db));                 //!!!<--- You can also declare function right away and then (req, res) will be called automaticly after (bcrypt, db)
-app.get('/profile/:id', (req, res) => {profileId(req, res, db)});
-app.put('/image', (req, res) => {image(req, res, db)});
-app.post('/imageurl', (req, res) => {handleApiCall(req, res)}); //<--- We're fetching to this URL and passing function that runs within imaje.js file 
-
+app.get('/', (req, res)=> { res.send(db.users) })
+app.post('/signin', handleSignin(db, bcrypt)) //!!!<--- We can also declare function right away and then (req, res) will be called automaticly after (bcrypt, db)
+app.post('/register', (req, res) => { register.handleRegister(req, res, db, bcrypt) }) //!!!<--- Using dependency injection we're injecting whatever dependensies this function needs. So we don't need to add/import "bcrypt & db" on signin.js page
+app.get('/profile/:id', (req, res) => { profile.handleProfileGet(req, res, db)}) 
+app.put('/image', (req, res) => { image.handleImage(req, res, db)})
+app.post('/imageurl', (req, res) => { image.handleApiCall(req, res)}) //<--- We're fetching to this URL and passing function that runs within imaje.js file 
 
 app.listen(process.env.PORT || 3001, () => {
-	console.log(`App is running on port ${process.env.PORT}`)
+  console.log(`App is running on port ${process.env.PORT}`);
 })
